@@ -1,0 +1,41 @@
+def calculate_relaxation_times(nicl2_mM, agarose_percent):
+    """
+    Calculate T₁ and T₂ relaxation times based on NiCl₂ and agarose concentrations.
+
+    Parameters:
+    - nicl2_mM (float): Concentration of NiCl₂ in mM.
+    - agarose_percent (float): Weight percentage of agarose (e.g., 2.1 for 2.1%).
+
+    Returns:
+    - dict: A dictionary containing T₁ (ms) and T₂ (ms).
+    """
+
+    # Model parameters for R₁ (longitudinal relaxation rate)
+    a1 = 3.750e-4  # ms⁻¹
+    b1 = 8.790e-6  # ms⁻¹ per % agarose
+    c1 = 6.683e-4  # ms⁻¹ per mM Ni²⁺
+
+    # Model parameters for R₂ (transverse relaxation rate)
+    a2 = 1.645e-4  # ms⁻¹
+    b2 = 7.622e-3  # ms⁻¹ per % agarose
+    c2 = 7.201e-4  # ms⁻¹ per mM Ni²⁺
+
+    # Calculate R₁ and R₂ (relaxation rates in ms⁻¹)
+    R1 = a1 + (b1 * agarose_percent) + (c1 * nicl2_mM)
+    R2 = a2 + (b2 * agarose_percent) + (c2 * nicl2_mM)
+
+    # Convert rates to relaxation times (T₁ = 1/R₁, T₂ = 1/R₂)
+    T1 = (1 / R1) if R1 != 0 else float('inf')  # Avoid division by zero
+    T2 = (1 / R2) if R2 != 0 else float('inf')  # Avoid division by zero
+
+    return {"T1 (ms)": T1, "T2 (ms)": T2}
+
+
+# Example usage:
+nicl2_concentration = 3.7 # mM
+agarose_percentage = 0.45 # %
+
+result = calculate_relaxation_times(nicl2_concentration, agarose_percentage)
+print("Relaxation Times:")
+print(f"T₁ = {result['T1 (ms)']:.1f} ms")
+print(f"T₂ = {result['T2 (ms)']:.1f} ms")
