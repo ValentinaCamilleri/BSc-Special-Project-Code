@@ -1,0 +1,153 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Tube order for T1 datasets
+tube_order_t1 = ['Tube 1', 'Tube 2', 'Tube 3', 'Tube 4']
+# Tube order for T2 dataset
+tube_order_t2 = ['Tube 1', 'Tube 2', 'Tube 3', 'Tube 4']
+
+# --- T1 Slow Dataset ---
+tube_values_slow = {
+    'Tube 1': [1320.45, 1300.20, 1309.20],  # Tube 1 (3P)
+    'Tube 2': [1044.25, 1045.40, 1046.30],  # Tube 2 (3P)
+    'Tube 3': [499.70, 492.13, 492.12],     # Tube 3 (3P)
+    'Tube 4': [346.85, 346.00, 345.69]      # Tube 4 (3P)
+}
+
+sd_slow_only = {
+    'Tube 1': [7.41, 6.34, 9.43],          # Tube 1 (SD 3P)
+    'Tube 2': [4.20, 6.96, 3.21],          # Tube 2 (SD 3P)
+    'Tube 3': [1.65, 0.56, 0.56],          # Tube 3 (SD 3P)
+    'Tube 4': [0.73, 0.80, 0.93]           # Tube 4 (SD 3P)
+}
+
+targets = {
+    'Tube 1': 1429,
+    'Tube 2': 1005,
+    'Tube 3': 508,
+    'Tube 4': 350
+}
+
+# --- T1 Fast Dataset ---
+tube_values_fast = {
+    'Tube 1': [1377.00, 1423.00, 1457.70],  # Tube 1 (3P)
+    'Tube 2': [1070.30, 1089.20, 1109.20],  # Tube 2 (3P)
+    'Tube 3': [495.24, 483.88, 486.07],     # Tube 3 (3P)
+    'Tube 4': [348.33, 342.99, 345.63]      # Tube 4 (3P)
+}
+
+sd_fast_only = {
+    'Tube 1': [8.91, 15.76, 9.99],          # Tube 1 (SD 3P)
+    'Tube 2': [6.58, 9.97, 6.13],           # Tube 2 (SD 3P)
+    'Tube 3': [2.84, 1.87, 2.01],           # Tube 3 (SD 3P)
+    'Tube 4': [1.45, 1.12, 1.25]            # Tube 4 (SD 3P)
+}
+
+# --- T2 Dataset ---
+tube_values_t2 = {
+    'Tube 1': [233.890, 229.850, 220.31],   # Tube 1 (T2)
+    'Tube 2': [59.809, 59.083, 57.418],     # Tube 2 (T2)
+    'Tube 3': [42.424, 42.161, 41.88],      # Tube 3 (T2)
+    'Tube 4': [131.535, 131.070, 130.88]    # Tube 4 (T2)
+}
+
+sd_t2 = {
+    'Tube 1': [1.46, 3.39, 3.11],           # Tube 1 (SD)
+    'Tube 2': [0.58, 0.60, 0.26],           # Tube 2 (SD)
+    'Tube 3': [0.22, 0.13, 0.10],           # Tube 3 (SD)
+    'Tube 4': [0.51, 5.36, 1.37]            # Tube 4 (SD)
+}
+
+targets_t2 = {
+    'Tube 1': 253,
+    'Tube 2': 59,
+    'Tube 3': 47,
+    'Tube 4': 159
+}
+
+# --- Print the avg, std dev, and % deviation ---
+def print_deviation_stats(tube_values, sd, targets, tube_order):
+    for tube in tube_order:
+        avg = np.mean(tube_values[tube])
+        std_dev = np.std(sd[tube], ddof=1)
+        percent_deviation = (avg - targets[tube]) / targets[tube] * 100
+        print(f"Tube: {tube}")
+        print(f"  Average: {avg:.2f}")
+        print(f"  Standard Deviation: {std_dev:.2f}")
+        print(f"  % Deviation from Target: {percent_deviation:.2f}%\n")
+
+# --- Print stats for all datasets ---
+print("=== T1 Slow Dataset ===")
+print_deviation_stats(tube_values_slow, sd_slow_only, targets, tube_order_t1)
+
+print("=== T1 Fast Dataset ===")
+print_deviation_stats(tube_values_fast, sd_fast_only, targets, tube_order_t1)
+
+print("=== T2 Dataset ===")
+print_deviation_stats(tube_values_t2, sd_t2, targets_t2, tube_order_t2)
+
+# --- Plotting Function with Greyscale Styling ---
+def plot_tube_data_final(data, sd, targets, title, tube_order, filename, y1_max=None):
+    avg_vals = [np.mean(data[tube]) for tube in tube_order]
+    error_bars = [np.std(sd[tube], ddof=1) for tube in tube_order]
+    target_vals = [targets[tube] for tube in tube_order]
+    percent_dev = [(avg - tgt) / tgt * 100 for avg, tgt in zip(avg_vals, target_vals)]
+
+    x = np.arange(len(tube_order))
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Line for average values (light gray line)
+    ax1.plot(x, avg_vals, linestyle='-', color='#222222', alpha=0.6, zorder=1)
+
+    # Circle points with gray fill and black border
+    ax1.errorbar(x, avg_vals, yerr=error_bars, fmt='o', markersize=10,
+                 markerfacecolor='lightgray', markeredgewidth=1.5,
+                 markeredgecolor='black', ecolor='black', capsize=8,
+                 label='Average ± SD', zorder=4)
+
+    # Black target lines
+    for i in range(len(tube_order)):
+        ax1.hlines(y=target_vals[i], xmin=x[i] - 0.15, xmax=x[i] + 0.15,
+                   colors='black', linewidth=2, label='Target' if i == 0 else "", zorder=2)
+
+    ax1.set_xlabel('Tube')
+    ax1.set_ylabel('Average Time (ms)')
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(tube_order)
+
+    if y1_max:
+        ax1.set_ylim(top=y1_max)
+
+    # % Deviation (squares with black border, dotted line)
+    ax2 = ax1.twinx()
+    ax2.plot(x, percent_dev, linestyle='--', color='dimgray', alpha=0.7, zorder=1)
+    ax2.scatter(x, percent_dev, marker='s', s=100,
+                color='lightgray', edgecolor='black', linewidth=1.5,
+                label='% Deviation', zorder=4)
+    ax2.set_ylabel('% Deviation from Target')
+
+    # Combined legend
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    fig.legend(lines1 + lines2, labels1 + labels2,
+               loc='upper right', bbox_to_anchor=(0.91, 0.92),
+               frameon=True, framealpha=1, edgecolor='black',
+               facecolor='white', fontsize=8.5)
+
+    plt.grid(True, linestyle='--', alpha=0.4)
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300)
+    plt.close()
+
+# --- Generate and Save Final Greyscale Plots ---
+plot_tube_data_final(tube_values_slow, sd_slow_only, targets,
+                     "", tube_order_t1,
+                     filename='../Aesthetics/Deviation/T1_Slow', y1_max=1500)
+
+plot_tube_data_final(tube_values_fast, sd_fast_only, targets,
+                     "", tube_order_t1,
+                     filename='../Aesthetics/Deviation/T1_Fast', y1_max=1500)
+
+plot_tube_data_final(tube_values_t2, sd_t2, targets_t2,
+                     "", tube_order_t2,
+                     filename='../Aesthetics/Deviation/T2')
