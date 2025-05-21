@@ -1,0 +1,99 @@
+import matplotlib.pyplot as plt
+
+# === Custom Styling ===
+plt.style.use('seaborn-v0_8-whitegrid')
+plt.rcParams['font.family'] = 'Arial'
+plt.rcParams['axes.labelsize'] = 11
+plt.rcParams['axes.titlesize'] = 12
+plt.rcParams['xtick.labelsize'] = 10
+plt.rcParams['ytick.labelsize'] = 10
+
+# Temperature levels
+temperatures = [35, 25, 15]
+
+# T1_fast values sorted in descending order per tube
+T1_fast = {
+    "Tube 1": sorted([937.13, 860.69, 944.09], reverse=True),
+    "Tube 2": sorted([500.97, 493.4, 510.23], reverse=True),
+    "Tube 3": sorted([1362.9, 1174, 1399.1], reverse=True),
+    "Tube 4": sorted([352.65, 349.71, 362.3], reverse=True)
+}
+
+T1_fast_sd = {
+    "Tube 1": sorted([6.9763, 9.4227, 10.172], reverse=True),
+    "Tube 2": sorted([4.4674, 7.0869, 12.081], reverse=True),
+    "Tube 3": sorted([8.8484, 9.1841, 15.299], reverse=True),
+    "Tube 4": sorted([2.8213, 6.4685, 9.5836], reverse=True)
+}
+
+T2 = {
+    "Tube 1": sorted([76.898, 51.111, 7.3074], reverse=True),
+    "Tube 2": sorted([60.514, 42.56, 1.8981], reverse=True),
+    "Tube 3": sorted([307.43, 242.6, 34.675], reverse=True),
+    "Tube 4": sorted([171.52, 131.56, 24.082], reverse=True)
+}
+
+T2_sd = {
+    "Tube 1": sorted([7.3726, 2.8593, 3.0028], reverse=True),
+    "Tube 2": sorted([2.7574, 2.3659, 4.8025], reverse=True),
+    "Tube 3": sorted([3.0028, 4.4422, 3.5419], reverse=True),
+    "Tube 4": sorted([4.8025, 3.5419, 2.371], reverse=True)
+}
+
+# Marker types (one per tube)
+marker_styles = ['o', 'o', 'o', 'o']
+line_styles = ['-', '--', '-.', ':'] # solid, dashed, dash-dot, dotted
+
+# === Plotting Function ===
+def plot_and_save(data, errors, title, filename):
+    fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
+    ax.set_facecolor('white')
+
+    for idx, tube in enumerate(data):
+        ax.errorbar(
+            temperatures,
+            data[tube],
+            yerr=errors[tube],
+            fmt=marker_styles[idx],
+            markersize=8,
+            markerfacecolor='gray',
+            markeredgecolor='black',
+            markeredgewidth=1,
+            ecolor='black',
+            capsize=6,
+            linestyle=line_styles[idx],
+            linewidth=1.2,
+            color='black',
+            label=tube,
+            zorder=3
+        )
+
+    # Rest of the code remains unchanged
+    ax.set_xlabel("Temperature (°C)", fontsize=11)
+    ax.set_ylabel("Relaxation Time (ms)", fontsize=11)
+    ax.invert_xaxis()
+
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_edgecolor('black')
+        spine.set_linewidth(0.8)
+
+    ax.legend(
+        title="Tubes",
+        fontsize=8,
+        title_fontsize=9,
+        frameon=True,
+        framealpha=1,
+        facecolor='white',
+        edgecolor='black',
+        loc='upper right'
+    )
+
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300, bbox_inches='tight', facecolor='white')
+    plt.close()
+
+
+# Generate and save the plots
+plot_and_save(T1_fast, T1_fast_sd, "T1_fast: Tube Values vs Temperature", "T1_fast_plot.png")
+plot_and_save(T2, T2_sd, "T2: Tube Values vs Temperature", "T2_plot.png")
