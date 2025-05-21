@@ -1,0 +1,99 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Data setup
+tube_values_slow = {
+    'Tube 1': [1320.45, 1300.20, 1309.20],
+    'Tube 2': [1044.25, 1045.40, 1046.30],
+    'Tube 3': [499.70, 492.13, 492.12],
+    'Tube 4': [346.85, 346.00, 345.69]
+}
+
+tube_values_fast = {
+    'Tube 1': [1377.00, 1423.00, 1457.70],
+    'Tube 2': [1070.30, 1089.20, 1109.20],
+    'Tube 3': [495.24, 483.88, 486.07],
+    'Tube 4': [348.33, 342.99, 345.63]
+}
+
+sd_slow = {
+    'Tube 1': [7.41, 6.34, 9.43],
+    'Tube 2': [4.20, 6.96, 3.21],
+    'Tube 3': [1.65, 0.56, 0.56],
+    'Tube 4': [0.73, 0.80, 0.93]
+}
+
+sd_fast = {
+    'Tube 1': [8.91, 15.76, 9.99],
+    'Tube 2': [6.58, 9.97, 6.13],
+    'Tube 3': [2.84, 1.87, 2.01],
+    'Tube 4': [1.45, 1.12, 1.25]
+}
+
+# Modern color palette
+colors = {
+    'slow': '#404040',  # Dark charcoal
+    'fast': '#808080',  # Medium gray
+    'text': '#333333'  # Dark gray for text
+}
+
+# Calculate statistics
+tube_order = ['Tube 1', 'Tube 2', 'Tube 3', 'Tube 4']
+avg_slow = [np.mean(tube_values_slow[tube]) for tube in tube_order]
+avg_fast = [np.mean(tube_values_fast[tube]) for tube in tube_order]
+std_slow = [np.mean(sd_slow[tube]) for tube in tube_order]
+std_fast = [np.mean(sd_fast[tube]) for tube in tube_order]
+percent_diffs = [((f - s) / s) * 100 for f, s in zip(avg_fast, avg_slow)]
+
+# Create figure with modern style
+plt.style.use('default')  # Start with default style
+plt.rcParams['figure.facecolor'] = 'white'  # Set white background
+plt.rcParams['axes.facecolor'] = 'white'  # Set white axes background
+
+fig, ax = plt.subplots(figsize=(8, 5))
+
+# Custom styling
+ax.tick_params(colors=colors['text'], which='both')
+for spine in ax.spines.values():
+    spine.set_color(colors['text'])
+
+x = np.arange(len(tube_order))
+width = 0.35
+
+# Plot bars
+for i in range(len(tube_order)):
+    # IR-SE bars
+    ax.bar(x[i] - width / 2, avg_slow[i], width,
+           color=colors['slow'], edgecolor='none',
+           yerr=std_slow[i], capsize=4, alpha=0.9,
+           label='IR-SE' if i == 0 else "")
+
+    # IR-TSE bars
+    ax.bar(x[i] + width / 2, avg_fast[i], width,
+           color=colors['fast'], edgecolor='none',
+           yerr=std_fast[i], capsize=4, alpha=0.9,
+           label='IR-TSE' if i == 0 else "")
+
+    # Percentage difference text
+    ax.text(x[i], max(avg_slow[i], avg_fast[i]) + 30,
+            f"{percent_diffs[i]:+.1f}%",
+            ha='center', va='bottom',
+            color=colors['text'], fontsize=10)
+
+# Set y-axis limit to prevent clipping
+all_heights = [max(avg_slow[i], avg_fast[i]) + max(std_slow[i], std_fast[i]) for i in range(len(tube_order))]
+max_height = max(all_heights)
+ax.set_ylim(top=max_height + 80)
+
+# Axis labels and ticks
+ax.set_xticks(x)
+ax.set_xticklabels(tube_order, color=colors['text'])
+ax.set_ylabel('T₁ Relaxation Time (ms)', color=colors['text'])
+
+# Legend
+ax.legend(frameon=False, loc='upper right')
+
+# Final adjustments
+plt.tight_layout()
+plt.savefig("T1_comparison.png", dpi=300, bbox_inches='tight', transparent=False)
+plt.show()
