@@ -1,0 +1,45 @@
+import numpy as np
+import pandas as pd
+
+# Data (per your original format, 4 months per measurement)
+data = {
+    "T1_slow": {
+        "Tube 1": [1044.25, 1045.40, 1071.20, 1072.40],  # Updated Tube 1 (3P values)
+        "Tube 2": [1320.45, 1300.20, 1371.00, 1372.80],  # Updated Tube 2 (3P values)
+        "Tube 3": [346.85, 346.00, 350.10, 346.80],      # Updated Tube 3 (3P values)
+        "Tube 4": [499.70, 492.13, 497.20, 492.90]       # Updated Tube 4 (3P values)
+    },
+    "T1_fast": {
+        "Tube 1": [1070.30, 1089.20, 1062.90, 1029.10],  # Updated Tube 1 (3P values)
+        "Tube 2": [1377.00, 1423.00, 1373.30, 1375.50],  # Updated Tube 2 (3P values)
+        "Tube 3": [348.33, 342.99, 350.20, 348.30],      # Updated Tube 3 (3P values)
+        "Tube 4": [495.24, 483.88, 495.80, 492.50]       # Updated Tube 4 (3P values)
+    },
+    "T2": {
+        "Tube 1": [59.868, 59.964, 59.867, 59.948],
+        "Tube 2": [233.92, 234.11, 232.95, 233.63],
+        "Tube 3": [131.56, 131.54, 131.48, 131.38],
+        "Tube 4": [42.358, 42.492, 42.162, 42.317]
+    }
+}
+
+# Column labels for months
+months = ['Dec', 'Feb', 'Mar', 'Apr']
+
+# Collect data into DataFrames
+table_rows = []
+
+for measurement, tubes in data.items():
+    for tube, values in tubes.items():
+        mean = np.mean(values)
+        std = np.std(values, ddof=1)
+        cov = (std / mean) * 100
+        row = [f"{tube} ({measurement})"] + values + [round(mean, 2), round(std, 2), round(cov, 2)]
+        table_rows.append(row)
+
+# Create DataFrame
+columns = ['Test Tube'] + months + ['Mean', 'Std Dev', 'CoV (%)']
+df_cov = pd.DataFrame(table_rows, columns=columns)
+
+# Display
+print(df_cov.to_string(index=False))
