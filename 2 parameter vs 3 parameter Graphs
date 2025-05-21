@@ -1,0 +1,119 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+# === Custom Styling ===
+plt.style.use('seaborn-v0_8-whitegrid')
+plt.rcParams['font.family'] = 'Arial'
+plt.rcParams['axes.labelsize'] = 11
+plt.rcParams['axes.titlesize'] = 12
+plt.rcParams['xtick.labelsize'] = 10
+plt.rcParams['ytick.labelsize'] = 10
+
+# === Models ===
+def model_2param(TI, A, T1):
+    return np.abs(A * (1 - 2 * np.exp(-TI / T1)))
+
+def model_3param(TI, A, B, T1):
+    return np.abs(A * (1 - B * np.exp(-TI / T1)))
+
+def r_squared(y, y_fit):
+    residuals = y - y_fit
+    ss_res = np.sum(residuals ** 2)
+    ss_tot = np.sum((y - np.mean(y)) ** 2)
+    return 1 - (ss_res / ss_tot)
+
+# Inversion times
+TI = np.array([30, 75, 100, 125, 150, 250, 1000, 1500, 1980], dtype=np.float64)
+
+# Mean intensities
+signals = {
+    "Tube 1": np.array([920.120483, 845.506042, 806.481934, 767.096375, 728.927734,
+                       586.108459, 251.602417, 526.518066, 702.289185]),
+    "Tube 2": np.array([1075.325317, 1009.783142, 975.084351, 940.891541, 907.228943,
+                       781.36145, 51.361446, 355.578308, 570.975891]),
+    "Tube 3": np.array([939.24884, 683.801819, 555.801819, 436.972351, 326.92627,
+                       42.414745, 1034.718872, 1123.064575, 1143.640503]),
+    "Tube 4": np.array([829.311096, 670.577759, 588.986694, 511.235565, 437.933319,
+                       176.746674, 775.604431, 932.488892, 990.444458])
+}
+
+# Corresponding standard deviations
+signal_sds = {
+    "Tube 1": np.array([16.988085, 15.518187, 15.01248, 14.219201, 13.448892,
+                       10.799742, 4.308076, 9.396887, 12.485628]),
+    "Tube 2": np.array([20.976242, 19.338482, 19.142084, 18.393408, 17.948654,
+                       15.420588, 1.215533, 6.516617, 10.952198]),
+    "Tube 3": np.array([8.165701, 6.328391, 4.850773, 3.973197, 3.313007,
+                       1.402169, 9.439837, 10.158262, 10.478363]),
+    "Tube 4": np.array([3.783317, 3.204968, 2.897783, 2.464498, 2.853571,
+                       2.305431, 3.681396, 4.42811, 4.4769])
+}
+
+# === Plotting ===
+fig, axes = plt.subplots(2, 2, figsize=(12, 10), dpi=100)
+fig.set_facecolor('white')
+axes = axes.flatten()
+
+fit_colors = {
+    '3param': '#000000',
+    '2param': '#CCCCCC',
+    'data': '#555555'
+}
+# Define more distinct dash patterns
+dash_patterns = {
+    '3param': (None, None),  # Solid line
+    '2param': (5, 2, 1, 2),  # Dash-dot pattern
+}
+
+for idx, (tube, signal) in enumerate(signals.items()):
+    ax = axes[idx]
+    ax.set_facecolor('white')
+
+    # Fit models (keep this part the same)
+    initial_guess_2 = [np.max(signal), 1000]
+    params_2, _ = curve_fit(model_2param, TI, signal, p0=initial_guess_2)
+    fit_2 = model_2param(np.linspace(min(TI), max(TI), 500), *params_2)
+
+    initial_guess_3 = [np.max(signal), 2.0, 1000]
+    bounds_3 = ([0, 0, 100], [2000, 3, 3000])
+    params_3, _ = curve_fit(model_3param, TI, signal, p0=initial_guess_3, bounds=bounds_3)
+    fit_3 = model_3param(np.linspace(min(TI), max(TI), 500), *params_3)
+
+    r2_2 = r_squared(signal, model_2param(TI, *params_2))
+    r2_3 = r_squared(signal, model_3param(TI, *params_3))
+
+    print(f"{tube} - R² (2-param): {r2_2:.4f}")
+    print(f"{tube} - R² (3-param): {r2_3:.4f}")
+    print('-' * 40)
+
+    TI_fit = np.linspace(min(TI), max(TI), 500)
+    # Same line width (2.5) but with distinct dash patterns
+    ax.plot(TI_fit, fit_3, color=fit_colors['3param'], linewidth=2.5,
+            linestyle='solid',  # Explicit solid line
+            label=f'3P Fit (T$_1$={params_3[2]:.0f} ms, R²={r2_3:.3f})')
+    ax.plot(TI_fit, fit_2, color=fit_colors['2param'], linewidth=2.5,
+            linestyle='dashdot',  # More distinct pattern
+            label=f'2P Fit (T$_1$={params_2[1]:.0f} ms, R²={r2_2:.3f})')
+
+    # Add error bars
+    ax.errorbar(TI, signal, yerr=signal_sds[tube], fmt='o', color=fit_colors['data'],
+                ecolor='black', elinewidth=1.2, capsize=4, markersize=5,
+                label='Data', zorder=5)
+
+    ax.set_title(f'{tube}', fontsize=12, weight='bold', pad=10)
+    ax.set_xlabel('Inversion Time (ms)', fontsize=11)
+    ax.set_ylabel('Signal Intensity', fontsize=11)
+
+    ax.grid(True, linestyle=':', color='gray', alpha=0.3)
+    for spine in ax.spines.values():
+        spine.set_edgecolor('black')
+        spine.set_linewidth(0.8)
+
+    ax.legend(frameon=True, framealpha=1, edgecolor='black',
+              facecolor='white', fontsize=8.5,
+              loc='lower right', bbox_to_anchor=(1.0, 0.0))
+
+plt.tight_layout(rect=[0, 0.05, 1, 0.95])
+plt.savefig('2v3_M1.png', dpi=300, bbox_inches='tight', facecolor='white')
+plt.show()
